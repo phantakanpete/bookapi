@@ -16,10 +16,13 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private String author;
 
-    @Column(name = "published_date")
+    @Column(name = "published_date", nullable = false)
     private LocalDate publishedDate;
 
     public Book() {

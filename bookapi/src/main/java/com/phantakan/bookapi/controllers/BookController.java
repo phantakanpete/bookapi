@@ -1,6 +1,7 @@
 package com.phantakan.bookapi.controllers;
 
 import com.phantakan.bookapi.dto.ApiResponse;
+import com.phantakan.bookapi.dto.BookResponse;
 import com.phantakan.bookapi.entity.Book;
 import com.phantakan.bookapi.services.BookService;
 import com.phantakan.bookapi.utils.DateUtils;
@@ -27,7 +28,7 @@ public class BookController {
     public ResponseEntity<ApiResponse<?>> getBooks(@RequestParam(required = false) String author) {
         // if request has author
         if (author != null) {
-            List<Book> books = bookService.findByAuthor(author);
+            List<BookResponse> books = bookService.findByAuthor(author);
             // if not found any books of the author
             if (books.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -38,47 +38,65 @@ public class BookController {
             return ResponseEntity.ok(new ApiResponse<>(200, "OK", books));
         }
         // else get all books
-        return ResponseEntity.ok(new ApiResponse<>(200, "OK", bookService.findAll()));
+        List<BookResponse> allBooks = bookService.findAll();
+        return ResponseEntity.ok(new ApiResponse<>(200, "OK", allBooks));
     }
 
     @PostMapping("")
     public ResponseEntity<ApiResponse<?>> addBooks(@RequestBody List<Book> books) {
+        // validate books not empty
+        if (books == null || books.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(400, "BAD_REQUEST", "Book list must not be empty"));
+        }
+
+        // error list for validate
+        List<String> errors = validateBooks(books);
+        // if found any errors
+        if (!errors.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(400, "BAD_REQUEST", errors));
+        }
+
+        // convert publishedDate to Gregorian for save
+        convertDates(books);
+        // else save books to database
+        List<Book> saved = bookService.saveAll(books);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(201, "CREATED", saved));
+    }
+
+    private List<String> validateBooks(List<Book> books) {
         // create errors list
         List<String> errors = new ArrayList<>();
 
         // loop books
         for (int i = 0; i < books.size(); i++) {
             Book book = books.get(i);
+            String message = "Book[" + i + "] ";
 
             // validate title
             if (book.getTitle() == null || book.getTitle().isBlank()) {
-                errors.add("Book[" + i + "] title is required");
+                errors.add(message + "title is required");
             }
 
             // validate author
             if (book.getAuthor() == null || book.getAuthor().isBlank()) {
-                errors.add("Book[" + i + "] author is required");
+                errors.add(message + "author is required");
             }
 
             // validate publishedDate
             LocalDate publishedDate = book.getPublishedDate();
             if (publishedDate == null) {
-                errors.add("Book[" + i + "] publishedDate is required");
+                errors.add(message + "publishedDate is required");
             } else if (!DateUtils.isValidPublishedDate(publishedDate)) {
-                errors.add("Book[" + i + "] publishedDate is invalid");
-            } else {
-                // store Gregorian date in database
-                book.setPublishedDate(DateUtils.toGregorian(publishedDate));
+                errors.add(message + "publishedDate is invalid");
             }
         }
 
-        // if found any errors
-        if (!errors.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(400, "BAD_REQUEST", errors));
-        }
+        return errors;
+    }
 
-        // else save books to database
-        List<Book> saved = bookService.saveAll(books);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(201, "CREATED", saved));
+    private void convertDates(List<Book> books) {
+        books.forEach(book ->
+                book.setPublishedDate(DateUtils.toGregorian(book.getPublishedDate()))
+        );
     }
 }
